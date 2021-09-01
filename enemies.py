@@ -454,3 +454,53 @@ class Pear(MinMax):
             score += winCount * self.WINCOUNT_BONUS
 
         return (score, False)
+
+class Rebstome(MinMax):
+    WIN_BONUS         = 255
+    PIECE_BELOW_BONUS = 1
+    ROW3_BONUS        = 1
+    WINCOUNT_BONUS    = 3
+
+    def __init__(self):
+        self.name = "Rebstome"
+
+    def Score(self, move: int, board: Board) -> tuple[int, bool]:
+        score = 0
+
+        # wins
+        if board.CheckWin(other_player(board.player)):
+            score += self.WIN_BONUS
+            return (score, True)
+        
+        # center bias
+        if move <= 3:
+            score += move
+        else: # score > 3
+            score += 6 - move
+
+        # piece below bonus
+        column = board.board[move]
+        piece_below = 0
+        last_piece  = -1
+        for i in range(5):
+            if column[5 - i] != CHARACTERS[0]:
+                last_piece = 5 - i
+                if 5 - i >= 1:
+                    piece_below = column[5 - i - 1]
+                break
+
+        if piece_below != 0:
+            if piece_below == board.player:
+                score += self.PIECE_BELOW_BONUS
+    
+        # 3 in a row
+        row3 = board.CheckVariable(3, True)
+        if row3 != 0:
+            score += self.ROW3_BONUS
+
+        # possible wins
+        winCount = board.CheckPossibleWins(other_player(board.player))
+        if winCount != 0:
+            score += winCount * self.WINCOUNT_BONUS
+
+        return (score, False)

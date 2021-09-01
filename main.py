@@ -14,13 +14,14 @@ from enemies import TukeAI
 from enemies import Windows
 from enemies import Human
 from enemies import Pear
+from enemies import Rebstome
 
 DELAY = 0
 RANDOM_START = True
 ROUNDS = 1
 MINIROUNDS = 2
 PRINT = False
-THREADS = 24
+THREADS = 16
 game_count = 0
 
 def AIPlay(Class1, Class2, human: bool = False) -> int:
@@ -82,11 +83,11 @@ if TOURNAMENT:
     win_board = {
         "Draw": 0
     }
-    names = ["Tukeque", "Pishle", "Terminator", "Pishle's epic ai, aka Terminator", "borkthing", "Windows", "Pear"]
+    names = ["Tukeque", "Pishle", "Terminator", "Pishle's epic ai, aka Terminator", "borkthing", "Windows", "Pear", "Rebstome"]
     for i in names:
         win_board[i] = 0
 
-    classes = [Pear, Windows]
+    classes = [Pear, Rebstome]
 
     finisheds = [False for _ in range(THREADS)]
 
