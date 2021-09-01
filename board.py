@@ -73,7 +73,21 @@ class Board:
             x += xvec
             y += yvec
             
-        if count == N:
+        if count >= N:
+            return True
+
+    def CheckRelativeNotOther(self, x: int, y: int, xvec: int, yvec: int, player: bool, N: int):
+        #N = 4 # this is big brain yes dynamic
+        count = 0
+        for _ in range(N):
+            if x >= self.w or y >= self.h or x < 0 or y < 0:
+                return False
+            if self.board[x][y] != other_player(player):
+                count += 1
+            x += xvec
+            y += yvec
+            
+        if count >= N:
             return True
     
     def CheckVariable(self, N: int, player: int) -> int:
@@ -100,6 +114,17 @@ class Board:
             return True
         return False
 
+    def CheckPossibleWins(self, player: int, N: int = 4) -> bool:
+        count = 0
+
+        for x in range(self.w):
+            for y in range(self.h):
+                coords = [[1, 0], [0, 1], [1, 1], [1, -1]]
+                
+                for coord in coords:
+                    if self.CheckRelativeNotOther(x, y, coord[0], coord[1], player, N):
+                        count += 1
+        return count
 
     def Print(self):
         for y in range(self.h):
