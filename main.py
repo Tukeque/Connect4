@@ -3,7 +3,6 @@ from random  import shuffle
 from board   import Board
 from board   import other_player
 #from rich    import print
-from oldtuke import TukeHeuristic
 from time    import sleep
 from _thread import start_new_thread
 
