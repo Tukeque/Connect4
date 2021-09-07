@@ -15,13 +15,18 @@ from enemies import Windows
 from enemies import Human
 from enemies import Pear
 from enemies import Rebstome
+from enemies import Rebstomer
+from enemies import RandomHeuristic
+from enemies import Rebstomer2Deep
+from enemies import Rebstomer3Deep
+from enemies import RebstomeLastLayerOptimized
 
 DELAY = 0
 RANDOM_START = True
-ROUNDS = 1
-MINIROUNDS = 2
+ROUNDS = 3
+MINIROUNDS = 10
 PRINT = False
-THREADS = 16
+THREADS = 12
 game_count = 0
 
 def AIPlay(Class1, Class2, human: bool = False) -> int:
@@ -34,8 +39,8 @@ def AIPlay(Class1, Class2, human: bool = False) -> int:
             enemy.PRINT = True
 
     shuffle(enemies)
-    board   = Board(7, 6)
-    board   .exits = False
+    board = Board(7, 6)
+    board.main = False
 
     def Turn(enemy):
         if PRINT:
@@ -52,10 +57,10 @@ def AIPlay(Class1, Class2, human: bool = False) -> int:
 
     # random start
     if RANDOM_START:
-        for _ in range(randint(2, 5) * 2):
+        for _ in range(randint(1, 5) * 2):
             while True:
                 move = randint(0, 6)
-                if board.ValidMove(move):
+                if board.ValidMove(move) != -1:
                     board.Place(move)
                     break
 
@@ -71,7 +76,7 @@ def AIPlay(Class1, Class2, human: bool = False) -> int:
         if human:
             #board.Print()
             print(f"last move: {last_move}")
-        print(f"game over! enemy {board.player}, aka {enemies[other_player(board.player) - 1].name} won\n")
+        print(f"game over! enemy {board.player}, aka {enemies[other_player(board.player) - 1].name} won")
         return enemies[other_player(board.player) - 1].name
     else:
         print(f"draw!")
@@ -79,15 +84,30 @@ def AIPlay(Class1, Class2, human: bool = False) -> int:
 
 TOURNAMENT = True
 
+def make_index(class1, class2) -> str:
+    dummy1 = class1()
+    dummy2 = class2()
+    return f"{dummy1.name} vs {dummy2.name}"
+
 if TOURNAMENT:
     win_board = {
         "Draw": 0
     }
-    names = ["Tukeque", "Pishle", "Terminator", "Pishle's epic ai, aka Terminator", "borkthing", "Windows", "Pear", "Rebstome"]
+    names = ["RandoMan", "Tukeque", "Pishle", "Terminator", "Pishle's epic ai, aka Terminator", "borkthing", "Windows", "Pear", "Rebstome", "Rebstomer", "Rebstomer 3D", "Rebstomer 2D", "Rebstome Optimized"]
     for i in names:
         win_board[i] = 0
 
-    classes = [Pear, Rebstome]
+    #classes = [RandomHeuristic, Pear, Rebstome, Rebstomer, Terminator, Windows]
+    classes = [RandomHeuristic, TukeAI, Rebstome, Rebstomer, Rebstomer3Deep, RebstomeLastLayerOptimized]
+    #classes = [Rebstome, RebstomeLastLayerOptimized]
+
+    if len(classes) == 2:
+        win_board[make_index(classes[0], classes[1])] = 0
+    else:
+        for i in classes:
+            for j in classes:
+                #name = AIPlay(i, j)
+                win_board[make_index(i, j)] = 0
 
     finisheds = [False for _ in range(THREADS)]
 
@@ -96,12 +116,16 @@ if TOURNAMENT:
 
         if len(classes) == 2:
             for _ in range(ROUNDS):
-                win_board[AIPlay(classes[0], classes[1])] += 1
+                name = AIPlay(classes[0], classes[1])
+                win_board[name] += 1
+                win_board[make_index(classes[0], classes[1])] += [classes[0]().name, "Draw", classes[1]().name].index(name) - 1
         else:
             for i in range(MINIROUNDS):
                 for i in classes:
                     for j in classes:
-                        win_board[AIPlay(i, j)] += 1
+                        name = AIPlay(i, j)
+                        win_board[name] += 1
+                        win_board[make_index(i, j)] += [i().name, "Draw", j().name].index(name) - 1
 
         finisheds[identifier] = True
 
@@ -115,13 +139,20 @@ if TOURNAMENT:
     while finisheds.count(False) != 0:
         pass
 
-    print(win_board)
-    print(game_count)
+    new_board = {}
+    vs_board = {}
+    for key in list(win_board.keys()):
+        if key.count("vs") >= 1:
+            vs_board[key] = win_board[key]
+        else:
+            if win_board[key] != 0:
+                new_board[key] = win_board[key]
+    #print(win_board)
+    print(new_board)
+    print(vs_board)
+    #print(f"game count: {game_count}")
 else:
     RANDOM_START = False
 
     PRINT = True
-    import board
-    board.BIG_EXITS   = True
-    board.BIG_PRINTS = True
-    AIPlay(Pear, Windows)
+    AIPlay(RandomHeuristic, Rebstomer, True)

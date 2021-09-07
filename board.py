@@ -8,13 +8,9 @@ def other_player(player: int):
         2: 1
     }[player]
 
-BIG_EXITS = False
-BIG_PRINTS = False
-
 class Board:
     over  = False
-    child = False
-    exits = True
+    main  = False
     draw  = False
 
     def Generate(self):
@@ -44,23 +40,33 @@ class Board:
                 self.over = self.CheckWin(self.player)          # update win bool
                 self.player = other_player(self.player)         # change player
             else:
-                print("cant place move")
+                if self.main:
+                    print("cant place move")
         else:
-            if not self.child:
-                if BIG_PRINTS:
-                    print("its a draw!")
-                    self.Print()
-                if BIG_EXITS:
-                    exit()
+            if self.main:
+                print("its a draw!")
+                self.Print()
+                exit()
 
             self.over = True
             self.draw = True
+
+    def Remove(self, i):
+        last_empty_index = -1
+
+        for y in range(self.h):
+            last_empty_index = y
+            if self.board[i][y] != 0: break
         
-    def __init__(self, w: int, h: int):
+        self.board[i][last_empty_index] = 0 # overwrite
+        self.player = other_player(self.player)  # change player
+
+    def __init__(self, w: int, h: int, main: bool = False):
         self.w = w
         self.h = h
         self.player = 1
         self.Generate()
+        self.main = main
 
     def CheckRelative(self, x: int, y: int, xvec: int, yvec: int, player: bool, N: int):
         #N = 4 # this is big brain yes dynamic
@@ -106,11 +112,10 @@ class Board:
         n = self.CheckVariable(N, player)   # big brain
 
         if n >= 1:
-            if not self.child:
-                if self.exits:
-                    self.Print()
-                    print(CHARACTERS[self.player] + "[green] won!")
-                    exit()
+            if self.main:
+                self.Print()
+                print(CHARACTERS[self.player] + "[green] won!")
+                exit()
             return True
         return False
 

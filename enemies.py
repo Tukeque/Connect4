@@ -20,6 +20,9 @@ class Enemy:
         return move
 
 class RandomHeuristic(Enemy):
+    def __init__(self):
+        self.name = "RandoMan"
+
     def Heuristic(self, board: Board) -> int:
         while True:
             x = randint(0, 6)
@@ -40,6 +43,8 @@ class Human(Enemy):
             else:
                 print("pls choose a valid move fuckin idiot")
 
+MINMAXPLACEREMOVE = 0
+
 class MinMax(Enemy):
     WIN_BONUS = 20
     DEPTH = 4
@@ -54,52 +59,87 @@ class MinMax(Enemy):
         score, won = self.Score(move, board)
 
         if won:
-            return (score * mult, True)
+            return (self.WIN_BONUS * mult, True)
             
         score *= mult
 
-        if depth != 0: # generate child evaluators
-            score += self.MinMax(board, depth - 1, -mult)[1]
+        if depth > 0: # generate child evaluators
+            #score = 0
+            score = self.MinMax(board, depth - 1, -mult)[1]
 
         return (score, False)
 
     def MinMax(self, board: Board, depth: int, mult: int, big: bool = False) -> tuple[int, int]: # returns (min/max  move, score)
-        boards = {}
+        global MINMAXPLACEREMOVE
+        #boards = {}
+        #scores = [(500*mult*mult, False) for _ in range(7)]
+        scores = {}
 
         for i in range(7):
             if board.ValidMove(i) != -1:
-                boards[i] = {
-                    "board": copy(board)
-                }
-                boards[i]["board"].child = True
-                boards[i]["board"].Place(i)
-                #boards[i]["score"] = 1
-                boards[i]["score"] = self.Evaluate(i, boards[i]["board"], depth, mult)
+                #boards[i] = {
+                #    "board": board
+                #}
+                #boards[i]["board"].child = True
+                #boards[i]["board"].Place(i)
+                ##boards[i]["score"] = 1
+                #boards[i]["score"] = self.Evaluate(i, boards[i]["board"], depth, mult)
 
-                if boards[i]["score"][1]:
-                    return (i, boards[i]["score"][0])
+                board.Place(i); MINMAXPLACEREMOVE += 1
+                scores[i] = self.Evaluate(i, board, depth - 1, mult)
+                board.Remove(i); MINMAXPLACEREMOVE -= 1
 
-        keys = list(boards.keys())
+                #if boards[i]["score"][1]:
+                #    return (i, boards[i]["score"][0])
+
+                if scores[i][1] is True:
+                    return (i, scores[i][0])
+
+        #keys = list(boards.keys())
+        #if len(keys) == 0: return (0, 0)
+#
+        #best = keys[0]
+        #for key in keys:
+        #    del boards[key]['board']
+#
+        #    if mult == 1:
+        #        if boards[best]["score"][0] < boards[key]["score"][0]:
+        #            best = key
+        #    elif mult == -1:
+        #        if boards[best]["score"][0] > boards[key]["score"][0]:
+        #            best = key
+
+        #gc.collect() # i need my ram
+
+        #best = scores[0][0]
+        #for i in range(7):
+        #    if mult == 1:
+        #        best = max(best, scores[i][0])
+        #    elif mult == -1:
+        #        #print(best)
+        #        #print(scores[i][0])
+        #        best = min(best, scores[i][0])
+        #best = scores.index((best, False))
+
+        keys = list(scores.keys())
         if len(keys) == 0: return (0, 0)
 
         best = keys[0]
         for key in keys:
-            del boards[key]['board']
-
             if mult == 1:
-                if boards[best]["score"][0] < boards[key]["score"][0]:
+                if scores[best][0] < scores[key][0]:
                     best = key
             elif mult == -1:
-                if boards[best]["score"][0] > boards[key]["score"][0]:
+                if scores[best][0] > scores[key][0]:
                     best = key
-
-        gc.collect() # i need my ram
 
         if big:
             if self.PRINT:
-                print(f"[yellow]scores: {[boards[score]['score'][0] for score in boards]}")
+                #print(f"[yellow]scores: {[boards[score]['score'][0] for score in boards]}")
+                print(f"[yellow]scores: {[scores[score][0] for score in scores]}")
 
-        return (best, boards[best]['score'][0])
+        #return (best, boards[best]['score'][0])
+        return (best, scores[best][0])
 
     def Heuristic(self, board: Board) -> int:
         
@@ -504,3 +544,89 @@ class Rebstome(MinMax):
             score += winCount * self.WINCOUNT_BONUS
 
         return (score, False)
+
+class Rebstomer(MinMax):
+    WIN_BONUS         = 255
+    PIECE_BELOW_BONUS = 1
+    ROW3_BONUS        = 1
+    WINCOUNT_BONUS    = 3
+
+    def __init__(self):
+        self.name = "Rebstomer"
+
+    def Score(self, move: int, board: Board) -> tuple[int, bool]:
+        score = 0
+
+        # wins
+        if board.CheckWin(other_player(board.player)):
+            score += self.WIN_BONUS
+            return (score, True)
+        
+        # center bias
+        if move <= 3:
+            score += move
+        else: # score > 3
+            score += 6 - move
+
+        # piece below bonus
+        column = board.board[move]
+        piece_below = 0
+        last_piece  = -1
+        for i in range(5):
+            if column[5 - i] != CHARACTERS[0]:
+                last_piece = 5 - i
+                if 5 - i >= 1:
+                    piece_below = column[5 - i - 1]
+                break
+
+        if piece_below != 0:
+            if piece_below == board.player:
+                score += self.PIECE_BELOW_BONUS
+    
+        # 3 in a row
+        row3 = board.CheckVariable(3, True)
+        if row3 != 0:
+            score += self.ROW3_BONUS
+
+        return (score, False)
+
+class Rebstomer3Deep(Rebstomer):
+    DEPTH = 3
+
+    def __init__(self):
+        self.name = "Rebstomer 3D"
+
+
+class Rebstomer2Deep(Rebstomer):
+    DEPTH = 2
+
+    def __init__(self):
+        self.name = "Rebstomer 2D"
+
+class RebstomeLastLayerOptimized(Rebstome):
+    DEPTH = 3
+
+    def __init__(self):
+        self.name = "Rebstome Optimized"
+
+    def Evaluate(self, move: int, board: Board, depth: int, mult: int) -> tuple[int, bool]:
+        if depth == 0: # last
+            for i in range(7):
+                if board.ValidMove(i) != -1:
+                    board.Place(i)
+                    if board.CheckWin(other_player(board.player)):
+                        return (self.WIN_BONUS * mult, True)
+                    board.Remove(i)
+
+        score, won = self.Score(move, board)
+
+        if won:
+            return (self.WIN_BONUS * mult, True)
+            
+        score *= mult
+
+        if depth > 0: # generate child evaluators
+            #score = 0
+            score = self.MinMax(board, depth - 1, -mult)[1]
+
+        return (score, False)    
